@@ -1,0 +1,17 @@
+all:
+  vars:
+    ansible_user: 'vagrant'
+    ansible_ssh_pass: 'vagrant'
+    ansible_host: 127.0.0.1
+
+#Группа mysql_net (parent), включающая в себя группы clients и servers (children)
+mysql_net:
+  children:
+    clients:
+    servers:
+servers:
+  hosts:
+    srvmysql:
+clients:
+  hosts:
+    backupmysql:

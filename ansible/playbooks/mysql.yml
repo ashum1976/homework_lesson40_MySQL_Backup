@@ -1,0 +1,9 @@
+---
+
+- name:  'Установка и настройка сервера MySQL и бэкапного сервера MySQL '
+  hosts:
+    - mysql_net
+  become: True
+  gather_facts: True
+  roles:
+    - mysql

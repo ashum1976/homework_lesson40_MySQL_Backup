@@ -1,0 +1,7 @@
+#Before using the General community collection, you need to install the collection with the ansible-galaxy CLI.
+# "ansible-galaxy collection install community.general"
+# You can also include it in a requirements.yml file and install it via "ansible-galaxy collection install -r requirements.yml"
+# Содержимое файла requirements.yml
+
+collections:
+- name: community.general

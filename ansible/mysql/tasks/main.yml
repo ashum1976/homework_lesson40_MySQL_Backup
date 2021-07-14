@@ -1,0 +1,66 @@
+---
+# tasks file for mysql
+
+#Удалить пакеты
+## Общие пакеты для всех серверов
+- name: "Удалить пакеты "
+  dnf:
+    name: "{{ dnf_remove }}"
+    state: absent
+  tags:
+    - "{{ mysql_net }}"
+
+# Установить пакет, percona и запустить"
+- name: "Установить пакеты "
+  dnf:
+    name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+    state: present
+    disable_gpg_check:  yes
+  tags:
+    - "{{ mysql_net }}"
+
+# https://www.percona.com/doc/percona-server/LATEST/installation/yum_repo.html Включить репозиторий percona 8 версии, после этого поставить пакеты для работы.
+- name: "Enable Percona repository (Percona version >= 8)"
+  command: "percona-release setup ps80 -y"
+  tags:
+    - "{{ mysql_net }}"
+
+
+# Установить пакеты, список в переменной "{{ dnf_install_all }}"
+# Общие пакеты для всех серверов
+- name: "Установить пакеты "
+  dnf:
+    name: "{{ dnf_install_all }}"
+    state: present
+    disable_gpg_check:  yes
+  tags:
+    - "{{ mysql_net }}"
+
+
+- name: "Права на директорию с базами mysql"
+  file:
+    path: {{ mysql_data_dir}}
+    owner: mysql
+    groups: mysql
+    mode: 0755
+    state: directory
+  tags:
+    - "{{ mysql_net }}"
+
+- name: "Ссылка на директорию "
+  file:
+    src: "/usr/share/percona-server"
+    dest: "/usr/share/mysql"
+    state: "link"
+  tags:
+    - "{{ mysql_net }}"
+
+#Управление сервисами
+## Включить в автозагрузку и запустить необходимые приложения
+- name: Enable and started mysql
+  systemd:
+    name: mysql
+    state: started
+    enabled: yes
+  tags:
+    - "{{ mysql_net }}"

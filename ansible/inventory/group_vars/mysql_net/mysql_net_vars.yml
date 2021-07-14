@@ -1,0 +1,21 @@
+# Удалить не нужные пакеты
+dnf_remove:
+      - firewalld
+
+# Установить необходимые пакеты
+dnf_install_all:
+      - mc
+      - iptables-services
+      - kbd
+      - epel-release
+      - tcpdump
+      - nano
+      - setools-console
+      - setroubleshoot-server
+      - openvpn
+      - iperf3.x86_64
+      - net-tools
+      - https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+      - percona-server-server
+      - percona-toolkit
+      - percona-xtrabackup-80

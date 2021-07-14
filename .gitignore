@@ -1,0 +1,11 @@
+.vagrant
+hddvm
+cert_old
+defaults
+ansible.log
+vagrant.log
+tests
+ansible/roles/openvpn/meta
+ansible/templates
+openvpn_conf.txt
+.travis.yml

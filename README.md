@@ -2,8 +2,43 @@
 
 ## ДЗ
 
+Задание:
+
+Настроить GTID репликацию
+Базу bet.dmp развернуть на мастере и настроить так, чтобы реплицировались таблицы: | bookmaker | | competition | | market | | odds | | outcome. Не реплицируются таблицы:
+
+ - bet.events_on_demand
+ - bet.v_same_event
 
 
+Решение:
+
+Для решения поставленной задачи, используем MySQL v8 от компании Percona. Сервера mysql стартуем на всех доступных сетевых  интерфейсах серверов (localhost, 192.168.3.2, 192.168.3.3), для упрощения запуска Vagrantfile.
+
+После выполнения Vagrant файла, статус репликации на Slave-e:
+
+![Статус репликации](Images/Replica_Status.png)
+
+
+Таблицы в базе bet, на Slave сервере, за исключением таблиц events_on_demand и v_same_event  
+![Tables on slave](Images/Slave_tables_from_master.png)
+
+___
+
+Изменение значения (добавление строки на Master-е, в таблице bookmaker)
+![Add data string into bet.bookmaker](Images/Insert_Master_Data.png)
+
+___
+
+Эта строка добавляется и на Slave-e ( backupmysql)
+
+![Add data string into bet.bookmaker on Slave](Images/Insert_Slave_Data.png)
+
+Рабочий Vagrantfile проекта:  
+[Vagrantfile](Vagrantfile)
+
+Ссылка на ДЗ:  
+[Githab link project](https://github.com/ashum1976/homework_lesson40_MySQL_Backup)
 
 ##   Общая теория, примеры, полезности.
 
@@ -43,6 +78,14 @@ ___
 
 # Бэкап, репликация. Утилиты для создания
 
+Создание зашифрованного пароля, для его использования при бэкапах базы.
+- **mysql_config_editor set --login-path=local --host=localhost --user=username --password**
+при использовании этого параметра, он дожен быть первым значением передаваемым mysqldump.
+
+Пример:
+
+_mysqldump **--login-path=local** --quote-names --add-drop-table --set-gtid-purged=OFF --single-transaction_
+
 ___
 
 ## **mysqldump**
@@ -66,11 +109,7 @@ ___
 - **--triggers**
 триггеры
 
-Создание зашифрованного пароля, для его использования при бэкапах базы.
-- **mysql_config_editor set --login-path=local --host=localhost --user=username --password**
-при использовании этого параметра, он дожен быть первым значением передаваемым mysqldump
 
-        - mysqldump **--login-path=local** --quote-names --add-drop-table --set-gtid-purged=OFF --single-transaction
 
 ___
 

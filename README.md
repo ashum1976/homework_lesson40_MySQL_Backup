@@ -26,6 +26,7 @@
 ___
 
 Изменение значения (добавление строки на Master-е, в таблице bookmaker)
+строка:  "34 | fresh"
 ![Add data string into bet.bookmaker](Images/Insert_Master_Data.png)
 
 ___

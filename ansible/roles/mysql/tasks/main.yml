@@ -1,0 +1,274 @@
+#---
+# tasks file for mysql
+
+#Удалить пакеты
+## Общие пакеты для всех серверов
+- name: "Удалить пакеты "
+  dnf:
+    name: "{{ dnf_remove }}"
+    state: absent
+  tags:
+    - "{{ mysql_tags }}"
+
+# Установить пакет, percona и запустить"
+- name: "Установить пакеты "
+  dnf:
+    name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+    state: present
+    disable_gpg_check:  yes
+  tags:
+    - "{{ mysql_tags }}"
+
+# https://www.percona.com/doc/percona-server/LATEST/installation/yum_repo.html Включить репозиторий percona 8 версии, после этого поставить пакеты для работы.
+- name: "Enable Percona repository (Percona version >= 8)"
+  command: "percona-release setup ps80 -y"
+  tags:
+    - "{{ mysql_tags }}"
+
+
+# Установить пакеты, список в переменной "{{ dnf_install_all }}"
+# Общие пакеты для всех серверов
+- name: "Установить пакеты "
+  dnf:
+    name: "{{ dnf_install_all }}"
+    state: present
+    disable_gpg_check:  yes
+  tags:
+    - "{{ mysql_tags }}"
+
+- name: "Права на директорию с базами mysql"
+  file:
+    path: "{{ mysql_data_dir }}"
+    owner: mysql
+    group: mysql
+    mode: 0755
+    state: directory
+  tags:
+    - "{{ mysql_tags }}"
+
+- name: "Ссылка на директорию "
+  file:
+    src: "/usr/share/percona-server"
+    dest: "/usr/share/mysql"
+    state: "link"
+  tags:
+    - "{{ mysql_tags }}"
+
+- name: "Var log directory"
+  file:
+    path: /var/log/mysql/
+    state: directory
+    owner: mysql
+    group: mysql
+    mode: 0750
+  tags:
+    - "{{ mysql_tags }}"
+
+- name: "Копирование файла конфигурации сервера"
+  template:
+     src:  my.cnf_server.j2
+     dest: /etc/my.cnf
+     owner: root
+     group: root
+     mode: 0644
+  tags:
+     - srvmysql
+
+
+- name: "Копирование файла конфигурации backup хоста"
+  template:
+     src:  my.cnf_backup.j2
+     dest: /etc/my.cnf
+     owner: root
+     group: root
+     mode: 0644
+  tags:
+     - backupmysql
+
+
+- name: "Копирование файлов настроек"
+  copy:
+    src: bin_log_gtid_server.cnf
+    dest: /etc/my.cnf.d/
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+     - srvmysql
+
+- name: "Копирование файлов настроек"
+  copy:
+    src: bin_log_gtid_backup.cnf
+    dest: /etc/my.cnf.d/
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+     - backupmysql
+
+
+# Создание модуля для SELinux
+
+- name: Copy SELinux файл для создания разрешающего модуля
+  copy:
+    src: mysqld_log.te
+    dest: /root/mysqld_log.te
+    mode: 0600
+  tags:
+    - "{{ mysql_tags }}"
+
+- name:  Сборка и установка модуля для SELinux
+  script: selinux_mysqld_log.sh
+  tags:
+    - "{{ mysql_tags }}"
+
+
+#Управление сервисами
+## Включить в автозагрузку и запустить необходимые приложения
+- name: Enable and started mysql
+  systemd:
+    name: mysql
+    state: started
+    enabled: yes
+  tags:
+    - "{{ mysql_tags }}"
+
+- name: "Получение пароля root-a из лог файла"
+  no_log: true
+  shell:  cat /var/log/mysql/mysqld.log | grep root@localhost | awk '{print $13}'
+  register: mysql_root_passwd
+  tags:
+     - "{{ mysql_tags }}"
+
+- name: "Показать переменную"
+  debug:
+    var: mysql_root_passwd
+  tags:
+    - "{{ mysql_tags }}"
+
+- name: "Change root passwd"
+  shell: mysql -u root -p'{{ mysql_root_passwd.stdout }}'    --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ new_passwd }}';"
+  tags:
+     - "{{ mysql_tags }}"
+
+
+- name: "Remove the test database"
+#  no_log: true
+  mysql_db:
+#    login_host: "{{ hostvars[inventory_hostname]['ansible_eth1']['ipv4']['address'] }}"
+    login_user: root
+    login_password: "{{ new_passwd }}"
+    name: test
+    state: absent
+  tags:
+    - "{{ mysql_tags }}"
+
+
+- name: Removes all anonymous user accounts
+#  no_log: true
+  mysql_user:
+    login_user: root
+    login_password: "{{ new_passwd }}"
+#    login_host: "{{ ansible_eth1.{{ipv4.address}}}}"
+    name: ''
+    state: absent
+  tags:
+    - "{{ mysql_tags }}"
+
+
+- name: "Копирование дампа тестовой базы данных bet  на хост"
+  copy:
+    src: bet.dmp
+    dest: /tmp
+    owner: mysql
+    group: mysql
+    mode: 0644
+  tags:
+    - srvmysql
+
+- name: "Восстановление требуемоей базы bet, from backup"
+  mysql_db:
+   login_user: root
+   login_password: "{{ new_passwd }}"
+#   login_host: "{{ ansible_facts.default_ipv4.address }}"
+   name: bet
+   state: import
+   target: /tmp/bet.dmp
+  tags:
+     - srvmysql
+
+- name: "Создание пользователя для репликации"
+  no_log: true
+  mysql_user:
+   login_user: root
+   login_password: "{{ new_passwd }}"
+#   login_host: "{{ hostvars[inventory_hostname].ansible_host }}"
+   name: repl
+   host: 192.168.3.3
+   password: "{{ repl_user_passwd }}"
+   priv: "*.*:REPLICATION SLAVE"
+   state: present
+  tags: srvmysql
+
+- name: "Создание бэкапа базы, для передачи клиенту backupmysql"
+  mysql_db:
+   state: dump
+   name: all
+   login_user: root
+   login_password: "{{ new_passwd }}"
+   target: /home/vagrant/dump.sql
+#   login_host: "{{ hostvars[inventory_hostname].ansible_host }}"
+   master_data: 1
+   ignore_tables:
+     - bet.events_on_demand
+     - bet.v_same_event
+  tags: srvmysql
+
+
+- name: "scp с сервера srvmysql файла dump.sql"
+  no_log: true
+  command: sshpass -p "vagrant" scp  -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null vagrant@192.168.3.2:/home/vagrant/dump.sql /home/vagrant/dump.sql
+  tags: backupmysql
+
+
+- name: "Восстановление требуемоей базы bet, from backup"
+  mysql_db:
+    login_user: root
+    login_password: "{{ new_passwd }}"
+#    login_host: "{{ hostvars[inventory_hostname].ansible_host }}"
+    name: bet
+    state: import
+    target:  /home/vagrant/dump.sql
+  tags: backupmysql
+
+- name: " Конфигурацтя для запуска слейв-а. Установка параметров подключения к основному серверу (master_host) "
+  mysql_replication:
+    login_user: root
+    login_password: "{{ new_passwd }}"
+    mode: changeprimary
+    primary_auto_position: 1
+    primary_host: 192.168.3.2
+    primary_port: 3306
+    primary_password: "{{ repl_user_passwd }}"
+    primary_user: repl
+  tags: backupmysql
+
+- name: " Конфигурацтя для запуска слейв-а "
+  mysql_replication:
+    login_user: root
+    login_password: "{{ new_passwd }}"
+    mode: startreplica
+  tags: backupmysql
+
+- name: "Статус репликации"
+  mysql_replication:
+    login_user: root
+    login_password: "{{ new_passwd }}"
+    mode: getreplica
+  register: status_repl
+  tags: backupmysql
+
+- name: "Показать статус реплткации "
+  debug:
+    var: status_repl
+  tags: backupmysql

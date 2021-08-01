@@ -7,15 +7,13 @@ dnf_install_all:
       - mc
       - iptables-services
       - kbd
-      - epel-release
-      - tcpdump
       - nano
       - setools-console
       - setroubleshoot-server
-      - openvpn
-      - iperf3.x86_64
-      - net-tools
       - https://repo.percona.com/yum/percona-release-latest.noarch.rpm
       - percona-server-server
       - percona-toolkit
       - percona-xtrabackup-80
+      - python38-PyMySQL
+      - python3-PyMySQL
+

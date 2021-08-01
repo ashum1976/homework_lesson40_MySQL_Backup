@@ -1,0 +1,12 @@
+module mysqld_log 1.0;
+
+require {
+        type mysqld_t;
+        type var_log_t;
+        class file write;
+	class file open;
+}
+
+#============= mysqld_t ==============
+allow mysqld_t var_log_t:file write;
+allow mysqld_t var_log_t:file open;

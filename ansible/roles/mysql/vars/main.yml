@@ -1,0 +1,9 @@
+---
+# vars file for mysql
+mysql_tags:
+    - srvmysql
+    - backupmysql	
+new_passwd: 
+    Otus_2021
+repl_user_passwd:
+    OtusMySQL_40

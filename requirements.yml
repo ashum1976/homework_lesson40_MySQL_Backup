@@ -4,4 +4,4 @@
 # Содержимое файла requirements.yml
 
 collections:
-- name: community.general
+- name: community.mysql

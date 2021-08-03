@@ -1,4 +1,4 @@
-# -*- mode: ruby -*-
+## -*- mode: ruby -*-
 # vim: set ft=ruby :
 # -*- mode: ruby -*-
 # vim: set ft=ruby :
@@ -26,6 +26,10 @@ Vagrant.configure("2") do |config|
       config.timezone.value = "Europe/Minsk"
     end
 
+    config.vm.provider "virtualbox" do |v|
+      v.customize ["modifyvm", :id, "--audio", "none", "--memory", "512", "--cpus", "1" ]
+    end
+
   MACHINES.each do |boxname, boxconfig|
 
     config.vm.synced_folder "./", "/vagrant", type: "rsync", rsync__auto: true, rsync__exclude: ['./hddvm, README.md']
@@ -34,9 +38,6 @@ Vagrant.configure("2") do |config|
         box.vm.provider "virtualbox" do |v|
             if boxname.to_s == "srvmysql"
               v.customize ["modifyvm", :id, "--audio", "none", "--memory", "1024", "--cpus", "1" ]
-            end
-            if boxname.to_s == "backupmysql"
-              v.customize ["modifyvm", :id, "--audio", "none", "--memory", "512", "--cpus", "3" ]
             end
         end
 

@@ -58,6 +58,30 @@ ___
 
 
 
+___
+
+Просмотр пользователей и хостов из таблицы user, с которых можно подключаться:
+- **select user,host from musql.user;**
+
+___
+Просмотр разрешений для пользователя 'wordpress'@'192.168.3':
+
+- **show grants for 'wordpress'@'192.168.3'**
+
+___
+
+Удалить все разрешения на доступ к базе wrdp для пользователя  `wordpress`@`192.168.3`:
+
+  - **revoke ALL PRIVILEGES ON `wrdp`.* from `wordpress`@`192.168.3`;**
+
+
+
+___
+Изменить пароль пользователя mysql, в версии mysql 5.7.6 и выше:
+
+- **ALTER USER 'wordpress'@'192.168.3' IDENTIFIED BY 'WorDpreSS2!!';**  
+
+
 ##### Параметры настройки работы mysql
 
 - **innodb_lru_scan_depth = 1024 - default**
@@ -75,6 +99,15 @@ ___
 Если используем рекомендуемое представление, **utf8mb4_0900_ai_ci**, то значение кодировки должно быть -  **utf8mb4**
 - **mysql_character_set_server: "utf8mb4"**
 - **mysql_collation_server: "utf8mb4_0900_ai_ci"**
+
+
+___
+
+##### Секция [mysqld]
+
+ skip-name-resolve - не выполнять разрешение имён хостов
+
+
 
 
 # Бэкап, репликация. Утилиты для создания
